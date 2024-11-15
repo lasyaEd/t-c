@@ -99,7 +99,7 @@ def evaluate_rag(chunks_query_retriever, num_questions: int = 5) -> None:
     question_answer_from_context_chain = create_question_answer_from_context_chain(llm)
 
     # Load questions and answers from JSON file
-    q_a_file_name = "../terms/q_a.json"
+    q_a_file_name = "queriesResponses.json"
     with open(q_a_file_name, "r", encoding="utf-8") as json_file:
         q_a = json.load(json_file)
 
