@@ -21,7 +21,7 @@ Baymax T&C uses a powerful LLM and a large repository of ToS agreements. When yo
 
 ## 🎯 Addressing Common ToS Problems
 
-Baymax T&C tackles the challenges of:
+### Baymax T&C tackles the challenges of:
 
 * **Legal jargon:** Complex legal language is translated into plain English.
 * **Length and complexity:**  Long and complicated ToS documents are summarized.
@@ -49,7 +49,7 @@ This project offers a complete workflow for creating a question-answering system
 3. **🤖 RAG Evaluation (evaluate_rag.py):**  Provides a thorough evaluation of the RAG system using the deepeval library. Metrics include:
     * Correctness (GEval)
     * Faithfulness
-    * Contextual Relevancy
+    * Answer Relevancy
 
 ## 💪 Technical Details
 
@@ -79,17 +79,15 @@ Before running the code, ensure you have the necessary libraries installed. You 
 ```bash
 pip install openai langchain faiss deepeval python-dotenv
 ```
-Use code with caution.
 Markdown
 You will also need an OpenAI API key. Create a .env file in the root directory and add your key:
 
 ```bash
 OPENAI_API_KEY=your_api_key_here
 ```
-Use code with caution.
 
 # 🏃 Usage
-📂 Prepare your data: Place your PDF documents and text files in the folders specified in simple_rag.ipynb. You'll likely need to modify the folders variable in that notebook to match your file structure.
+📂 Prepare your data: Place your PDF documents and text files in the data folder for simple_rag.ipynb. You'll likely need to modify the folders variable in that notebook to match your file structure.
 
 ▶️ Run the Jupyter Notebook: Execute simple_rag.ipynb. This will load your documents, create the vector database, and run the evaluation.
 

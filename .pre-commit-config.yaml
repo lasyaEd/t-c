@@ -1,34 +1,17 @@
-
-#repos:
-#-   repo: https://github.com/psf/black
-#    rev: 23.10.1
-#    hooks:
-#    -   id: black
-#       # language_version: python3.10 # Removed - we'll specify python directly in entry
-#       python: C:\Users\CHAVALI\anaconda3\envs\cloud_computing\python.exe
-#       entry: python3.10 -m black
-#       language: system # or python, you may find it works better with one of these than without, experimentation required.
-#        args: [--line-length=88] # Your Black options
-
-#-   repo: https://github.com/PyCQA/isort
-#    rev: 5.12.0
-#    hooks:
-#    -   id: isort
-#       # language_version: python3.10 # Removed - we'll specify python directly in entry
-#       python: C:\Users\CHAVALI\anaconda3\envs\cloud_computing\python.exe #replace with your python exe path (run this: where python)
-#        entry: python3.10 -m isort
-#        language: system # or python, you may find it works better with one of these than without, experimentation required.
-
-
-
 repos:
 -   repo: https://github.com/psf/black
     rev: 23.10.1
     hooks:
     -   id: black
-        language_version: python3.10
+        args: [--line-length=88]
 
 -   repo: https://github.com/PyCQA/isort
     rev: 5.12.0
     hooks:
     -   id: isort
+
+-   repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+    -   id: bandit
+        args: ["-c", "pyproject.toml"]

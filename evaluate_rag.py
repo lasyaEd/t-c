@@ -19,7 +19,7 @@ import sys
 from typing import List, Tuple
 
 from deepeval import evaluate
-from deepeval.metrics import ContextualRelevancyMetric, FaithfulnessMetric, GEval
+from deepeval.metrics import AnswerRelevancyMetric, FaithfulnessMetric, GEval
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 from langchain_openai import ChatOpenAI
 
@@ -79,11 +79,11 @@ correctness_metric = GEval(
 )
 
 faithfulness_metric = FaithfulnessMetric(
-    threshold=0.7, model="gpt-4", include_reason=False
+    threshold=0.7, model="gpt-4o", include_reason=False
 )
 
-relevance_metric = ContextualRelevancyMetric(
-    threshold=1, model="gpt-4", include_reason=True
+answer_relevancy_metric = AnswerRelevancyMetric(
+    threshold=0.7, model="gpt-4o", include_reason=True
 )
 
 
@@ -93,18 +93,22 @@ def evaluate_rag(chunks_query_retriever, num_questions: int = 10) -> None:
 
     Args:
         chunks_query_retriever: Function to retrieve context chunks for a given query.
-        num_questions (int): Number of questions to evaluate (default: 5).
+        num_questions (int): Number of questions to evaluate (default: 10).
     """
     llm = ChatOpenAI(temperature=0, model_name="gpt-4o", max_tokens=2000)
     question_answer_from_context_chain = create_question_answer_from_context_chain(llm)
 
     # Load questions and answers from JSON file
     q_a_file_name = "queriesResponses.json"
-    with open(q_a_file_name, "r", encoding="utf-8") as json_file:
-        q_a = json.load(json_file)
+    try:
+        with open(q_a_file_name, "r", encoding="utf-8") as json_file:
+            q_a = json.load(json_file)
+    except json.JSONDecodeError as e:
+        print(f"Error loading JSON file: {e}")
+        return
 
-    questions = [qa["question"] for qa in q_a][:num_questions]
-    ground_truth_answers = [qa["answer"] for qa in q_a][:num_questions]
+    questions = [qa.get("question", "").strip() for qa in q_a][:num_questions]
+    ground_truth_answers = [qa.get("answer", "").strip() for qa in q_a][:num_questions]
     generated_answers = []
     retrieved_documents = []
 
@@ -112,20 +116,33 @@ def evaluate_rag(chunks_query_retriever, num_questions: int = 10) -> None:
     for question in questions:
         context = retrieve_context_per_question(question, chunks_query_retriever)
         retrieved_documents.append(context)
-        context_string = " ".join(context)
+        context_string = " ".join(context).strip()
         result = answer_question_from_context(
             question, context_string, question_answer_from_context_chain
         )
-        generated_answers.append(result["answer"])
+        generated_answer = result.get("answer", "").strip()
+        if not generated_answer:
+            print(f"Empty answer for question: {question}")
+            generated_answer = "No answer provided."
+        generated_answers.append(generated_answer)
 
-    # Create test cases and evaluate
+    # Create test cases and validate
     test_cases = create_deep_eval_test_cases(
         questions, ground_truth_answers, generated_answers, retrieved_documents
     )
-    evaluate(
-        test_cases=test_cases,
-        metrics=[correctness_metric, faithfulness_metric, relevance_metric],
-    )
+    for case in test_cases:
+        print(case)  # Debug each test case
+
+    # Evaluate with metrics
+    try:
+        evaluate(
+            test_cases=test_cases,
+            metrics=[correctness_metric, faithfulness_metric, answer_relevancy_metric],
+        )
+    except ValueError as e:
+        print(f"Evaluation error: {e}")
+        for case in test_cases:
+            print(case)
 
 
 if __name__ == "__main__":
