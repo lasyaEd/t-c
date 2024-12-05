@@ -4,13 +4,13 @@ import textwrap
 from typing import List
 
 import numpy as np
-from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
-from pydantic import BaseModel, Field
 from openai import RateLimitError
+from pydantic import BaseModel, Field
 from rank_bm25 import BM25Okapi
 
 
@@ -143,7 +143,9 @@ def retrieve_all_metadata(vectorstore):
             titles = {doc.metadata.get("title", "Unknown") for doc in documents}
             return sorted(titles)
         else:
-            raise ValueError("Vectorstore does not have a valid 'docstore' or metadata.")
+            raise ValueError(
+                "Vectorstore does not have a valid 'docstore' or metadata."
+            )
     except Exception as e:
         raise ValueError(f"Metadata retrieval error: {e}")
 
@@ -159,7 +161,10 @@ def retrieve_context_per_question(question, retriever):
     Returns:
         list: A list of metadata titles if the query is about terms, or context otherwise.
     """
-    if any(keyword in question.lower() for keyword in ["terms and conditions", "available", "what terms"]):
+    if any(
+        keyword in question.lower()
+        for keyword in ["terms and conditions", "available", "what terms"]
+    ):
         try:
             return retrieve_all_metadata(retriever.vectorstore)
         except Exception as e:
@@ -168,7 +173,11 @@ def retrieve_context_per_question(question, retriever):
     # Retrieve relevant context for general questions
     try:
         results = retriever.get_relevant_documents(question)
-        return [doc.page_content for doc in results] if results else ["No relevant context found."]
+        return (
+            [doc.page_content for doc in results]
+            if results
+            else ["No relevant context found."]
+        )
     except Exception as e:
         raise ValueError(f"Error retrieving context: {e}")
 

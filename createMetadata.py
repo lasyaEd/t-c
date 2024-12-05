@@ -1,5 +1,5 @@
-import os
 import json
+import os
 
 # Path to the data folder
 data_folder = "frontend/data"

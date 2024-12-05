@@ -1,8 +1,8 @@
+import json
 import os
 import sys
 import time
 from pathlib import Path
-import json
 
 import streamlit as st
 import toml
@@ -25,10 +25,10 @@ primary_color = config["theme"]["primaryColor"]
 from core import (
     create_retriever,
     initialize_rag,
+    initialize_vectorstore_with_metadata,
     retrieve_context_per_question,
     show_context,
     text_wrap,
-    initialize_vectorstore_with_metadata
 )
 
 temperature = 0.4
@@ -61,6 +61,7 @@ def load_metadata(metadata_path="frontend/data/metadata.json"):
     except Exception as e:
         st.error(f"Failed to load metadata: {str(e)}")
         return []
+
 
 def get_base64_image(image_path):
     import base64
@@ -112,8 +113,12 @@ st.sidebar.success("API key provided successfully!")
 # Dropdown to display available T&Cs
 metadata = load_metadata()
 if metadata:
-    titles = ["Browse companies"] + [meta['title'] for meta in metadata]  # Extract only the titles
-    selected_tc = st.sidebar.selectbox("Available Terms and Conditions", titles, index=0, key="browse_only")
+    titles = ["Browse companies"] + [
+        meta["title"] for meta in metadata
+    ]  # Extract only the titles
+    selected_tc = st.sidebar.selectbox(
+        "Available Terms and Conditions", titles, index=0, key="browse_only"
+    )
     # st.markdown(f"### Selected: **{selected_tc}**")
 else:
     st.sidebar.warning("No terms and conditions available.")
@@ -187,9 +192,19 @@ if prompt := st.chat_input("What would you like to know?"):
     if "retriever" in st.session_state and st.session_state.retriever is not None:
         try:
             # Check if it's a metadata query
-            if any(keyword in prompt.lower() for keyword in ["terms and conditions", "available", "what terms", "companies"]):
+            if any(
+                keyword in prompt.lower()
+                for keyword in [
+                    "terms and conditions",
+                    "available",
+                    "what terms",
+                    "companies",
+                ]
+            ):
                 is_metadata_query = True
-                context = retrieve_context_per_question(prompt, st.session_state.retriever)
+                context = retrieve_context_per_question(
+                    prompt, st.session_state.retriever
+                )
 
                 # Display metadata titles in the chat
                 with st.chat_message("assistant"):
@@ -199,10 +214,12 @@ if prompt := st.chat_input("What would you like to know?"):
                             st.write(f"- {title}")
                     else:
                         st.write("No terms and conditions available.")
-            
+
             # Retrieve context for general queries
             if not is_metadata_query:
-                context = retrieve_context_per_question(prompt, st.session_state.retriever)
+                context = retrieve_context_per_question(
+                    prompt, st.session_state.retriever
+                )
 
         except Exception as e:
             st.warning(f"RAG retrieval error: {str(e)}")
@@ -221,12 +238,17 @@ if prompt := st.chat_input("What would you like to know?"):
                         context_str = "\n\n".join(context)
                     else:
                         context_str = context
-                    system_prompt_with_context = f"{system_prompt}\n\nRelevant context:\n{context_str}"
+                    system_prompt_with_context = (
+                        f"{system_prompt}\n\nRelevant context:\n{context_str}"
+                    )
 
                 # Generate assistant response
                 messages = [{"role": "system", "content": system_prompt_with_context}]
                 messages.extend(
-                    [{"role": str(m["role"]), "content": str(m["content"])} for m in st.session_state.messages]
+                    [
+                        {"role": str(m["role"]), "content": str(m["content"])}
+                        for m in st.session_state.messages
+                    ]
                 )
 
                 stream = client.chat.completions.create(
@@ -252,4 +274,6 @@ if prompt := st.chat_input("What would you like to know?"):
                 full_response = "I apologize, but I encountered an error while processing your request."
 
             # Save assistant response to chat history
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            st.session_state.messages.append(
+                {"role": "assistant", "content": full_response}
+            )

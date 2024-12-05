@@ -1,7 +1,7 @@
+import json
 import os
 
 import streamlit as st
-import json
 from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -25,6 +25,7 @@ def create_retriever(vector_store, k=3):
     """Create a retriever from the vector store"""
     return vector_store.as_retriever(search_kwargs={"k": k})
 
+
 def load_metadata(metadata_file):
     """
     Load metadata from a JSON file.
@@ -39,7 +40,9 @@ def load_metadata(metadata_file):
         return json.load(f)
 
 
-def create_documents_with_metadata(metadata_list, data_folder, chunk_size=1000, chunk_overlap=200):
+def create_documents_with_metadata(
+    metadata_list, data_folder, chunk_size=1000, chunk_overlap=200
+):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
     )
@@ -61,9 +64,13 @@ def create_documents_with_metadata(metadata_list, data_folder, chunk_size=1000, 
     return documents
 
 
-def initialize_vectorstore_with_metadata(metadata_file, data_folder, chunk_size=1000, chunk_overlap=200):
+def initialize_vectorstore_with_metadata(
+    metadata_file, data_folder, chunk_size=1000, chunk_overlap=200
+):
     metadata_list = load_metadata(metadata_file)
-    documents = create_documents_with_metadata(metadata_list, data_folder, chunk_size, chunk_overlap)
+    documents = create_documents_with_metadata(
+        metadata_list, data_folder, chunk_size, chunk_overlap
+    )
     embeddings = OpenAIEmbeddings()
 
     # Ensure metadata is being printed for debugging
@@ -73,9 +80,10 @@ def initialize_vectorstore_with_metadata(metadata_file, data_folder, chunk_size=
     return FAISS.from_documents(documents, embeddings)
 
 
-
 @st.cache_resource
-def initialize_rag(metadata_file="frontend/data/metadata.json", data_folder="frontend/data/", k=2):
+def initialize_rag(
+    metadata_file="frontend/data/metadata.json", data_folder="frontend/data/", k=2
+):
     """
     Initialize the RAG system with metadata and context.
 
@@ -95,7 +103,6 @@ def initialize_rag(metadata_file="frontend/data/metadata.json", data_folder="fro
         return vectorstore.as_retriever(search_kwargs={"k": k})
     except Exception as e:
         raise ValueError(f"Failed to initialize RAG system: {e}")
-
 
 
 def encode_documents(path, chunk_size=1000, chunk_overlap=200):

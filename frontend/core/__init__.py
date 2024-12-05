@@ -8,12 +8,20 @@ from .helpers import (
     encode_from_string,
     encode_pdf,
     read_pdf_to_string,
+    retrieve_all_metadata,
     retrieve_context_per_question,
     show_context,
     text_wrap,
-    retrieve_all_metadata
 )
-from .rag import create_retriever, encode_documents, initialize_rag, setup_environment, initialize_vectorstore_with_metadata, load_metadata, create_documents_with_metadata
+from .rag import (
+    create_documents_with_metadata,
+    create_retriever,
+    encode_documents,
+    initialize_rag,
+    initialize_vectorstore_with_metadata,
+    load_metadata,
+    setup_environment,
+)
 
 # Make these functions available when importing from core
 __all__ = [
@@ -36,5 +44,5 @@ __all__ = [
     "QuestionAnswerFromContext",
     "create_question_answer_from_context_chain",
     "answer_question_from_context",
-    "retrieve_all_metadata"
-]  
+    "retrieve_all_metadata",
+]
