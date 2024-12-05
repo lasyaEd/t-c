@@ -4,6 +4,8 @@ import sys
 import time
 from pathlib import Path
 
+import docx
+import PyPDF2
 import streamlit as st
 import toml
 from dotenv import load_dotenv
@@ -24,8 +26,11 @@ primary_color = config["theme"]["primaryColor"]
 # Import functions directly from core module
 from core import (
     create_retriever,
+    generate_document_summary,
     initialize_rag,
     initialize_vectorstore_with_metadata,
+    process_uploaded_tc,
+    read_file_content,
     retrieve_context_per_question,
     show_context,
     text_wrap,
@@ -42,24 +47,37 @@ load_dotenv()
 # Get the directory of the current script
 current_dir = Path(__file__).parent
 image_path = current_dir / "assets" / "images" / "logo.jpg"
+data_dir = current_dir / "data"
+metadata_path = data_dir / "metadata.json"
+
+# Create data directory if it doesn't exist
+data_dir.mkdir(exist_ok=True)
+
+# If metadata file doesn't exist, create it with empty list
+if not metadata_path.exists():
+    with open(metadata_path, "w") as f:
+        json.dump([], f)
 
 
-def load_metadata(metadata_path="frontend/data/metadata.json"):
+def load_metadata(metadata_path=metadata_path):
     """
     Loads metadata from the specified JSON file.
-
-    Args:
-        metadata_path (str): Path to the metadata JSON file.
-
-    Returns:
-        list: A list of dictionaries containing metadata information.
     """
     try:
+        # Create data directory if it doesn't exist
+        metadata_path.parent.mkdir(exist_ok=True)
+
+        # If file doesn't exist, create it with empty list
+        if not metadata_path.exists():
+            with open(metadata_path, "w") as f:
+                json.dump([], f)
+
+        # Load metadata
         with open(metadata_path, "r") as f:
             metadata = json.load(f)
         return metadata
     except Exception as e:
-        st.error(f"Failed to load metadata: {str(e)}")
+        print(f"Metadata handling error: {str(e)}")
         return []
 
 
@@ -82,23 +100,45 @@ with col2:
         unsafe_allow_html=True,
     )
 
-
-st.title("Baymax T&C")
+st.markdown(
+    """
+    <style>
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .subheader {
+            font-size: 1.2rem;
+            color: #424242;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+    </style>
+    
+    <div class="title">Baemax T&C</div>
+    <div class="subheader">
+        An App to help demystify terms and conditions agreements.<br>
+        Please upload a document or ask about the terms we have in our database.
+    </div>
+""",
+    unsafe_allow_html=True,
+)
 
 # Consolidated API key handling
-st.sidebar.title("OpenAI API Configuration")
+st.sidebar.title("Powered by OpenAI")
 
-# Try to get API key from environment first, then allow user input
+# Try environment variable first, then fall back to sidebar input
 api_key = os.getenv("OPENAI_API_KEY") or st.sidebar.text_input(
     "OpenAI API Key",
     type="password",
     help="Enter your OpenAI API key. This will not be stored permanently.",
 )
 
-# Initialize the OpenAI client only once
+# Initialize the OpenAI client only if we have a key
 if not api_key:
-    st.warning("Please enter your OpenAI API key in the sidebar to continue.")
-    st.stop()  # Stop execution until API key is provided
+    st.warning("Please enter your OpenAI API Key in the sidebar to continue.")
+    st.stop()
 
 # Store API key in session state if it's new or different
 if "api_key" not in st.session_state or st.session_state.api_key != api_key:
@@ -107,21 +147,62 @@ if "api_key" not in st.session_state or st.session_state.api_key != api_key:
     if "retriever" in st.session_state:
         del st.session_state.retriever
 
-client = OpenAI(api_key=api_key)
-st.sidebar.success("API key provided successfully!")
+# Initialize session state variables
+if "processed_documents" not in st.session_state:
+    st.session_state.processed_documents = {}
 
-# Dropdown to display available T&Cs
-metadata = load_metadata()
-if metadata:
-    titles = ["Browse companies"] + [
-        meta["title"] for meta in metadata
-    ]  # Extract only the titles
-    selected_tc = st.sidebar.selectbox(
-        "Available Terms and Conditions", titles, index=0, key="browse_only"
+try:
+    client = OpenAI(api_key=api_key)
+    st.sidebar.success("API key provided successfully!")
+
+    # Add a visual separator
+    st.sidebar.markdown("---")
+
+    # Add file upload section
+    st.sidebar.header("What do you want to analyze?")
+    uploaded_file = st.sidebar.file_uploader(
+        "Upload T&C document",
+        type=["pdf", "docx", "txt"],
+        help="Supported formats: PDF, DOCX, TXT",
     )
-    # st.markdown(f"### Selected: **{selected_tc}**")
-else:
-    st.sidebar.warning("No terms and conditions available.")
+
+    # Process uploaded file
+    if uploaded_file:
+        try:
+            # Read content
+            content = read_file_content(uploaded_file)
+
+            # Process content and get summary
+            chunks, summary = process_uploaded_tc(content, client, st.session_state)
+
+            # Create embeddings and update vector store
+            embeddings = OpenAIEmbeddings()
+            custom_vectorstore = FAISS.from_texts(
+                chunks,
+                embeddings,
+                metadatas=[{"source": uploaded_file.name, "title": uploaded_file.name}]
+                * len(chunks),
+            )
+
+            # Merge with existing retriever if it exists
+            if "retriever" in st.session_state and st.session_state.retriever:
+                existing_vectorstore = st.session_state.retriever.vectorstore
+                existing_vectorstore.merge_from(custom_vectorstore)
+            else:
+                st.session_state.retriever = create_retriever(custom_vectorstore)
+
+            st.sidebar.success(f"Successfully processed {uploaded_file.name}")
+
+            # Display summary in main area
+            st.markdown("### Document Summary")
+            st.markdown(summary)
+
+        except Exception as e:
+            st.sidebar.error(f"Error processing file: {str(e)}")
+
+except Exception as e:
+    st.error(f"Error initializing OpenAI client: {str(e)}")
+    st.stop()
 
 # Initialize RAG system after API key verification
 if "retriever" not in st.session_state:
@@ -136,11 +217,18 @@ if "retriever" not in st.session_state:
         init_message.error(
             f"Failed to initialize RAG system. Error: {str(e)}\nContinuing without RAG functionality."
         )
-        print(
-            f"RAG initialization error: {str(e)}", file=sys.stderr
-        )  # Detailed logging
-        # Don't stop the app, just continue without RAG
+        print(f"RAG initialization error: {str(e)}", file=sys.stderr)
         st.session_state.retriever = None
+
+# Dropdown to display available T&Cs
+metadata = load_metadata()
+if metadata:
+    titles = ["Browse Companies"] + [meta["title"] for meta in metadata]
+    selected_tc = st.sidebar.selectbox(
+        "Available Terms and Conditions", titles, index=0, key="browse_only"
+    )
+else:
+    st.sidebar.warning("No terms and conditions available.")
 
 if "openai_model" not in st.session_state:
     st.session_state["openai_model"] = "gpt-4"
@@ -171,11 +259,17 @@ for message in st.session_state.messages:
             st.markdown(message["content"])
 
 # System prompt
-system_prompt = """You are a knowledgeable assistant with access to specific terms and conditions via a Retrieval-Augmented Generation (RAG) system.
-- You can provide answers based on terms and conditions you have access to.
-- If a question is outside your RAG system, you can answer using general knowledge.
+system_prompt = """You are a helpful assistant with expertise in answering questions and providing insights. 
+When relevant context is provided, prioritize using it to answer the query. 
+If the question is unrelated to the context or no context is provided, respond based on your general knowledge.
+If you do not know the answer, tell the user that their question is outside of your scope and do not lie.      
 
-Always prioritize context retrieved via the RAG system to ensure accuracy."""
+You can:
+- Answer questions using the provided context.
+- Summarize information from context or general knowledge.
+- Assist with general queries unrelated to the context.
+
+Maintain a conversational and approachable tone. Always aim to provide clear, concise, and accurate answers."""
 
 # Accept user input
 if prompt := st.chat_input("What would you like to know?"):

@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -26,23 +27,16 @@ def create_retriever(vector_store, k=3):
     return vector_store.as_retriever(search_kwargs={"k": k})
 
 
-def load_metadata(metadata_file):
-    """
-    Load metadata from a JSON file.
-
-    Args:
-        metadata_file (str): Path to the metadata.json file.
-
-    Returns:
-        list: A list of metadata dictionaries.
-    """
-    with open(metadata_file, "r") as f:
+def load_metadata(metadata_path):
+    """Load metadata from a JSON file."""
+    with open(metadata_path, "r") as f:
         return json.load(f)
 
 
-def create_documents_with_metadata(
-    metadata_list, data_folder, chunk_size=1000, chunk_overlap=200
-):
+def create_documents_with_metadata(metadata_list, data_folder, chunk_size=1000, chunk_overlap=200):
+    """
+    Create documents with metadata and content chunks.
+    """
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
     )
@@ -80,10 +74,14 @@ def initialize_vectorstore_with_metadata(
     return FAISS.from_documents(documents, embeddings)
 
 
+core_dir = Path(__file__).parent  # Gets the core directory
+frontend_dir = core_dir.parent  # Goes up one level to frontend directory
+data_dir = frontend_dir / "data"  # Points to frontend/data
+metadata_path = data_dir / "metadata.json"
+
+
 @st.cache_resource
-def initialize_rag(
-    metadata_file="frontend/data/metadata.json", data_folder="frontend/data/", k=2
-):
+def initialize_rag(metadata_file=metadata_path, data_folder=data_dir, k=2):
     """
     Initialize the RAG system with metadata and context.
 
