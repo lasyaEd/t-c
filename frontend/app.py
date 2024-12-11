@@ -155,7 +155,7 @@ with tab3:
                     # Generate ToS template
                     system_prompt_with_context = f"{system_prompt}\n\nRelevant context:\n{context}"
                     response = client.chat.completions.create(
-                        model="gpt-4",
+                        model="gpt-4",  # Update with your model
                         messages=[
                             {"role": "system", "content": system_prompt_with_context},
                             {"role": "user", "content": user_request},
@@ -163,8 +163,10 @@ with tab3:
                         temperature=0.4,
                         max_tokens=500,
                     )
+                    # Properly access the response content
+                    tos_template = response.choices[0].message.content
                     st.subheader("Generated Terms of Service Template")
-                    st.text(response.choices[0].message["content"])
+                    st.text(tos_template)
                 else:
                     st.error("No context provided. Unable to generate a template.")
             except Exception as e:
