@@ -288,6 +288,32 @@ if prompt := st.chat_input("What would you like to know?"):
     # Check if retriever exists
     if "retriever" in st.session_state and st.session_state.retriever is not None:
         try:
+            # Check if it's a metadata query
+            if any(
+                keyword in prompt.lower()
+                for keyword in [
+                    "terms and conditions",
+                    "available",
+                    "what terms",
+                    "companies",
+                ]
+            ):
+                is_metadata_query = True
+                context = retrieve_context_per_question(
+                    prompt, st.session_state.retriever
+                )
+
+                # Display metadata titles in the chat
+                with st.chat_message("assistant"):
+                    if context:
+                        st.write("### Available Terms and Conditions:")
+                        for title in context:
+                            st.write(f"- {title}")
+                    else:
+                        st.write("No terms and conditions available.")
+
+            # Retrieve context for general queries
+            if not is_metadata_query:
                 context = retrieve_context_per_question(
                     prompt, st.session_state.retriever
                 )
