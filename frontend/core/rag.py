@@ -10,7 +10,7 @@ from langchain_openai import OpenAIEmbeddings
 
 
 def setup_environment():
-    """Setup environment variables and API key"""
+    """Setup environment variables and API key."""
     # Load environment variables
     load_dotenv()
 
@@ -22,15 +22,64 @@ def setup_environment():
     return False
 
 
+def safe_load_metadata(metadata_path):
+    """
+    Safely load metadata from a JSON file.
+
+    Args:
+        metadata_path: Path to the metadata file.
+
+    Returns:
+        list: Metadata as a list of dictionaries.
+    """
+    if not os.path.exists(metadata_path):
+        st.warning("Metadata file does not exist. Initializing with an empty list.")
+        return []
+
+    try:
+        with open(metadata_path, "r") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        st.error("Metadata file is invalid. Initializing with an empty list.")
+        return []
+
+
+def add_file_to_metadata(uploaded_file, metadata_path, data_folder):
+    """
+    Add uploaded file metadata to metadata.json and save the file to the data folder.
+
+    Args:
+        uploaded_file: The uploaded file object.
+        metadata_path: Path to the metadata JSON file.
+        data_folder: Path to the data folder.
+
+    Returns:
+        None
+    """
+    metadata = safe_load_metadata(metadata_path)
+
+    # Save the uploaded file to the data folder
+    file_path = os.path.join(data_folder, uploaded_file.name)
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+
+    # Add the new file's metadata
+    new_metadata = {
+        "title": uploaded_file.name.split(".")[0],  # Use file name (without extension) as the title
+        "filename": uploaded_file.name,
+    }
+    metadata.append(new_metadata)
+
+    # Write updated metadata back to the file
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=4)
+
+    st.success(f"File '{uploaded_file.name}' added to metadata!")
+
+
 def create_retriever(vector_store, k=3):
-    """Create a retriever from the vector store"""
+    """Create a retriever from the vector store."""
     return vector_store.as_retriever(search_kwargs={"k": k})
-
-
-def load_metadata(metadata_path):
-    """Load metadata from a JSON file."""
-    with open(metadata_path, "r") as f:
-        return json.load(f)
 
 
 def create_documents_with_metadata(
@@ -63,7 +112,19 @@ def create_documents_with_metadata(
 def initialize_vectorstore_with_metadata(
     metadata_file, data_folder, chunk_size=1000, chunk_overlap=200
 ):
-    metadata_list = load_metadata(metadata_file)
+    """
+    Initialize a vector store using metadata and document chunks.
+
+    Args:
+        metadata_file: Path to the metadata JSON file.
+        data_folder: Path to the folder containing text files.
+        chunk_size: Maximum chunk size for splitting text.
+        chunk_overlap: Overlap between consecutive chunks.
+
+    Returns:
+        FAISS: A vector store containing embedded document chunks.
+    """
+    metadata_list = safe_load_metadata(metadata_file)
     documents = create_documents_with_metadata(
         metadata_list, data_folder, chunk_size, chunk_overlap
     )
@@ -76,16 +137,10 @@ def initialize_vectorstore_with_metadata(
     return FAISS.from_documents(documents, embeddings)
 
 
-core_dir = Path(__file__).parent  # Gets the core directory
-frontend_dir = core_dir.parent  # Goes up one level to frontend directory
-data_dir = frontend_dir / "data"  # Points to frontend/data
-metadata_path = data_dir / "metadata.json"
-
-
 @st.cache_resource
-def initialize_rag(metadata_file=metadata_path, data_folder=data_dir, k=2):
+def initialize_rag(metadata_file, data_folder, k=2):
     """
-    Initialize the RAG system with metadata and context.
+    Initialize the RAG system with metadata and documents.
 
     Args:
         metadata_file (str): Path to the metadata file.
@@ -99,8 +154,29 @@ def initialize_rag(metadata_file=metadata_path, data_folder=data_dir, k=2):
         raise ValueError("Failed to load API key")
 
     try:
-        vectorstore = initialize_vectorstore_with_metadata(metadata_file, data_folder)
+        metadata_list = safe_load_metadata(metadata_file)
+        documents = []
+
+        for meta in metadata_list:
+            file_path = os.path.join(data_folder, meta["filename"])
+            if os.path.exists(file_path):
+                with open(file_path, "r", encoding="utf-8") as file:
+                    text = file.read()
+
+                text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+                chunks = text_splitter.create_documents([text])
+
+                # Attach metadata to each chunk
+                for chunk in chunks:
+                    chunk.metadata = meta
+                documents.extend(chunks)
+            else:
+                st.warning(f"File '{meta['filename']}' not found in data folder.")
+
+        embeddings = OpenAIEmbeddings()
+        vectorstore = FAISS.from_documents(documents, embeddings)
         return vectorstore.as_retriever(search_kwargs={"k": k})
+
     except Exception as e:
         raise ValueError(f"Failed to initialize RAG system: {e}")
 

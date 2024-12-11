@@ -22,6 +22,7 @@ from .rag import (
     initialize_vectorstore_with_metadata,
     load_metadata,
     setup_environment,
+    add_file_to_metadata,
 )
 
 # Make these functions available when importing from core
@@ -34,6 +35,7 @@ __all__ = [
     "initialize_vectorstore_with_metadata",
     "load_metadata",
     "create_documents_with_metadata",
+    "add_file_to_metadata",
     # Helper functions
     "text_wrap",
     "show_context",
