@@ -1,11 +1,11 @@
 from .helpers import (
+    clean_text_for_display,
     encode_pdf,
     generate_document_summary,
     process_uploaded_tc,
     read_file_content,
     retrieve_all_metadata,
     retrieve_context_per_question,
-    clean_text_for_display
 )
 from .rag import (
     create_documents_with_metadata,

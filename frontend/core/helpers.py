@@ -57,6 +57,7 @@ def read_file_content(uploaded_file) -> str:
 
     return content
 
+
 def clean_text_for_display(raw_text):
     """
     Clean and format raw text for better display with proper line breaks.
@@ -79,7 +80,6 @@ def clean_text_for_display(raw_text):
     formatted_text = formatted_text.replace("3.", "\n\n3.")  # Extend for all numbers
 
     return formatted_text
-
 
 
 def generate_document_summary(content: str, client) -> str:
@@ -213,6 +213,7 @@ def encode_pdf(path, chunk_size=1000, chunk_overlap=200):
 
     return vectorstore
 
+
 def retrieve_all_metadata(vectorstore):
     """
     Retrieve all unique metadata titles from the vectorstore.
@@ -232,7 +233,9 @@ def retrieve_all_metadata(vectorstore):
             titles = {doc.metadata.get("title", "Unknown") for doc in documents}
             return sorted(titles)  # Return sorted list of titles for consistency
         else:
-            raise ValueError("Vectorstore does not have a valid 'docstore' or metadata.")
+            raise ValueError(
+                "Vectorstore does not have a valid 'docstore' or metadata."
+            )
     except Exception as e:
         raise ValueError(f"Metadata retrieval error: {e}")
 
