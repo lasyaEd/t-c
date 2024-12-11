@@ -104,18 +104,38 @@ with tab2:
             if available_terms:
                 selected_tc = st.selectbox("Select a T&C to view", available_terms)
                 if selected_tc:
-                    # Retrieve and format the context
+                    # Retrieve context for the selected T&C
                     context = retrieve_context_per_question(selected_tc, retriever)
+
+                    # Display a structured summary
                     st.subheader(f"Summary of {selected_tc}")
                     if isinstance(context, list):
-                        # Join list items with double newlines for proper paragraph separation
+                        # Combine the list into paragraphs
                         formatted_context = "\n\n".join(context)
                     else:
-                        # Replace raw \n with proper newlines for readability
+                        # Replace raw newlines for better readability
                         formatted_context = context.replace("\\n", "\n")
 
-                    # Display formatted summary
-                    st.markdown(formatted_context)
+                    # Add subheaders for sections if context is lengthy or detailed
+                    st.markdown("### Document Overview")
+                    st.markdown(formatted_context[:500])  # Display first 500 characters as an overview
+
+                    st.markdown("### Key Terms and Clauses")
+                    st.markdown(formatted_context[500:1000])  # Example split, adjust based on content
+
+                    st.markdown("### Important Points to Consider")
+                    unusual_clauses = [
+                        "liability waiver",
+                        "data sharing without consent",
+                        "automatic renewals",
+                    ]  # Example risk-related phrases
+                    risks = [chunk for chunk in formatted_context.split(". ") if any(phrase in chunk.lower() for phrase in unusual_clauses)]
+                    if risks:
+                        for risk in risks:
+                            st.warning(risk)
+                    else:
+                        st.info("No unusual clauses detected.")
+
             else:
                 st.warning("No terms and conditions available in the database.")
         except Exception as e:
