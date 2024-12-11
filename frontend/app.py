@@ -46,7 +46,7 @@ load_dotenv()
 
 # Get the directory of the current script
 current_dir = Path(__file__).parent
-image_path = current_dir / "assets" / "images" / "logo.svg"
+image_path = current_dir / "assets" / "images" / "logo.png"
 data_dir = current_dir / "data"
 metadata_path = data_dir / "metadata.json"
 
