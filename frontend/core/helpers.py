@@ -119,22 +119,30 @@ def process_uploaded_tc(content: str, client, session_state) -> Tuple[List[str],
         # Return cached results
         return session_state.processed_documents[content_hash]
 
-    # Generate summary first
-    summary = generate_document_summary(content, client)
-
-    # Then process chunks for RAG
+    # Split content into smaller chunks for processing
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200,
+        chunk_size=3000,  # Adjust chunk size to stay within token limits
+        chunk_overlap=500,
         length_function=len,
     )
-
     chunks = text_splitter.split_text(content)
 
-    # Store results in session state
-    session_state.processed_documents[content_hash] = (chunks, summary)
+    # Generate a summary for each chunk
+    summaries = []
+    for chunk in chunks:
+        try:
+            summary = generate_document_summary(chunk, client)
+            summaries.append(summary)
+        except Exception as e:
+            summaries.append(f"Error generating summary for a chunk: {str(e)}")
 
-    return chunks, summary
+    # Combine summaries into a single summary
+    combined_summary = "\n\n".join(summaries)
+
+    # Store results in session state
+    session_state.processed_documents[content_hash] = (chunks, combined_summary)
+
+    return chunks, combined_summary
 
 
 def replace_t_with_space(list_of_documents):

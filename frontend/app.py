@@ -67,6 +67,11 @@ with tab1:
             # Read file content
             content = read_file_content(uploaded_file)
 
+            # Check for overly large content
+            if len(content) > 50000:  # Example threshold
+                st.warning("The uploaded document is too large to process in one go. Please try a smaller file.")
+                st.stop()
+
             # Process content to generate summary
             chunks, summary = process_uploaded_tc(content, client, st.session_state)
 
