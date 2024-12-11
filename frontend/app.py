@@ -10,7 +10,6 @@ from core import (
     process_uploaded_tc,
     read_file_content,
     retrieve_context_per_question,
-    add_file_to_metadata,
 )
 
 # Paths and configurations
