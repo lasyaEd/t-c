@@ -59,10 +59,6 @@ with tab1:
 
     if uploaded_file:
         try:
-            # Add uploaded file to metadata and reinitialize RAG
-            add_file_to_metadata(uploaded_file, metadata_path, data_dir)
-            st.session_state.retriever = initialize_rag(metadata_file=metadata_path, data_folder=data_dir)
-            st.success("RAG updated with new file!")
 
             # Read file content
             content = read_file_content(uploaded_file)
@@ -99,7 +95,7 @@ with tab1:
 # Tab 2: Browse Available T&Cs
 with tab2:
     st.header("Available Terms and Conditions")
-    # Retrieve metadata from RAG
+    # Retrieve metadata from the static retriever
     retriever = st.session_state.get("retriever")
     if retriever:
         try:

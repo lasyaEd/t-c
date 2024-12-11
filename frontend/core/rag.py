@@ -44,39 +44,6 @@ def safe_load_metadata(metadata_path):
         return []
 
 
-def add_file_to_metadata(uploaded_file, metadata_path, data_folder):
-    """
-    Add uploaded file metadata to metadata.json and save the file to the data folder.
-
-    Args:
-        uploaded_file: The uploaded file object.
-        metadata_path: Path to the metadata JSON file.
-        data_folder: Path to the data folder.
-
-    Returns:
-        None
-    """
-    metadata = safe_load_metadata(metadata_path)
-
-    # Save the uploaded file to the data folder
-    file_path = os.path.join(data_folder, uploaded_file.name)
-    with open(file_path, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-
-    # Add the new file's metadata
-    new_metadata = {
-        "title": uploaded_file.name.split(".")[0],  # Use file name (without extension) as the title
-        "filename": uploaded_file.name,
-    }
-    metadata.append(new_metadata)
-
-    # Write updated metadata back to the file
-    with open(metadata_path, "w") as f:
-        json.dump(metadata, f, indent=4)
-
-    st.success(f"File '{uploaded_file.name}' added to metadata!")
-
-
 def create_retriever(vector_store, k=3):
     """Create a retriever from the vector store."""
     return vector_store.as_retriever(search_kwargs={"k": k})

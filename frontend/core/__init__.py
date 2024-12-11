@@ -13,7 +13,6 @@ from .rag import (
     initialize_rag,
     initialize_vectorstore_with_metadata,
     setup_environment,
-    add_file_to_metadata,
 )
 
 # Make these functions available when importing from core
@@ -25,7 +24,6 @@ __all__ = [
     "setup_environment",
     "initialize_vectorstore_with_metadata",
     "create_documents_with_metadata",
-    "add_file_to_metadata",
     # Helper functions
     "encode_pdf",
     "retrieve_context_per_question",
