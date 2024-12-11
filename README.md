@@ -1,4 +1,5 @@
-# Baymax T&C
+
+# Click Here! 👉 [![Streamlit](https://docs.streamlit.io/logo.svg)](https://baymaxtc.streamlit.app/)
 
 # 🚀 Baymax T&C: Your Friendly Terms of Service Summarizer
 
@@ -35,13 +36,13 @@ This repository contains a comprehensive system for building and evaluating Retr
 
 This project offers a complete workflow for creating a question-answering system that leverages external documents. The key components are:
 
-* **📄 Document Processing (helper_functions.py):**  Handles the ingestion and processing of PDF documents and text files. This includes:
-    * PDF/Text Encoding: Processes both PDFs and text strings.
+* **📄 Document Processing (helper_functions.py):**  Handles the ingestion and processing of text files. This includes:
+    * Text Encoding: Processes both PDFs and text strings.
     * Chunking: Splits text into overlapping chunks for efficient embedding.
     * Embedding: Generates OpenAI embeddings for each chunk.
     * Vector Store: Stores embeddings in a FAISS vector database for fast similarity search.  This allows for efficient retrieval of relevant information.
 
-* **⚙️ RAG Pipeline (simple_rag.ipynb):**  Implements the core RAG pipeline using Langchain and OpenAI:
+* **⚙️ RAG Pipeline (simple_rag.ipynb):**  Implements the core RAG pipeline using OpenAI:
     * Document Loading: Loads documents from specified folders and creates a FAISS index.
     * Retrieval: Uses FAISS for efficient retrieval of relevant document chunks.  Includes a fallback BM25 method.
     * Answer Generation: Uses an OpenAI LLM (specified in the notebook) to generate answers based on the retrieved context.
@@ -57,7 +58,6 @@ This project offers a complete workflow for creating a question-answering system
 This project uses:
 
 * **Python 3.11:** Our runtime environment.
-* **Langchain:** For building the RAG pipeline.
 * **OpenAI API:**  Currently used for LLM processing.
 * **FAISS:** For efficient vector search within the document store.
 * **Deepeval:** For evaluating model performance (using Correctness, Faithfulness, and Contextual Relevancy metrics).
@@ -75,33 +75,56 @@ We utilize:
 * **Bandit:** For security analysis.
 * **Pre-commit:** To automate code quality checks before each commit.
 
+## 🦾 What's Under The Hood
+![Screenshot 2024-12-06 192958](https://github.com/user-attachments/assets/5715a14c-aa15-4380-9a02-7decbb7cabf7)
 
 ## 🐍 Setup
 
+Create a conda environment:
+```
+conda create -n your_env python=3.11
+```
 Before running the code, ensure you have the necessary libraries installed. You can install them using pip:
 
 ```bash
-pip install openai langchain faiss-cpu deepeval python-dotenv
+pip install -r requirements.txt
 ```
+Add secrets.toml file:
+
+![Screenshot 2024-12-06 221129](https://github.com/user-attachments/assets/ba4c491d-2dd0-4672-9a78-59212f56e35e)
+
+![image](https://github.com/user-attachments/assets/c0c2d0f0-a913-43ed-8e68-30079dfd96b3)
 
 You will also need an OpenAI API key. Create a .env file in the root directory and add your key:
 
 ```bash
 OPENAI_API_KEY=your_api_key_here
 ```
+In the terminal: 
+```bash
+cd frontend/
+```
+```
+streamlit run app.py
+```
 
-# 🏃 Usage
-📂 Prepare your data: Place your PDF documents and text files in the data folder for simple_rag.ipynb. You'll likely need to modify the folders variable in that notebook to match your file structure.
+# 🤪 Quickstart Guide
+[<img src="https://github.com/user-attachments/assets/25b1217d-4778-4790-909f-f2d95ba55822" width="200"/>](https://share.streamlit.io/)
 
-▶️ Run the Jupyter Notebook: Execute simple_rag.ipynb. This will load your documents, create the vector database, and run the evaluation.
+![image](https://github.com/user-attachments/assets/dc17c7b8-7492-426d-8f88-a600737bf6dd)
 
-📊 Review the Results: The notebook will output the evaluation results from evaluate_rag.py, providing metrics for correctness, faithfulness, and relevance.
+![image](https://github.com/user-attachments/assets/438232b2-ce8e-4f6c-9390-183ea72351b3)
+
+
+# 🤖 Usage
+Ask Away! 
 
 🤝 Contributing
+
 Contributions are welcome! Please open an issue or submit a pull request.
 
 📝 License
 
- Copyrights of the Baymax T&C Team
+Copyrights of the Baymax T&C Team
 
 Happy RAG-ing! 🎉
