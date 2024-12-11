@@ -158,6 +158,11 @@ try:
     # Add a visual separator
     st.sidebar.markdown("---")
 
+    # Model selection
+    model_options = ["gpt-4", "gpt-4-turbo-preview"]
+    selected_model = st.sidebar.selectbox("Select Model", model_options)
+    st.session_state["openai_model"] = selected_model
+
     # Add file upload section
     st.sidebar.header("What do you want to analyze?")
     uploaded_file = st.sidebar.file_uploader(
@@ -222,7 +227,7 @@ if "retriever" not in st.session_state:
 
 # Add a visual separator
     st.sidebar.markdown("---")
-    
+
 # Dropdown to display available T&Cs
 metadata = load_metadata()
 if metadata:
@@ -239,11 +244,6 @@ if "openai_model" not in st.session_state:
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-# Model selection
-model_options = ["gpt-4", "gpt-4-turbo-preview"]
-selected_model = st.sidebar.selectbox("Select Model", model_options)
-st.session_state["openai_model"] = selected_model
 
 # Reset button
 if st.sidebar.button("Reset Chat"):
