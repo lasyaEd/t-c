@@ -104,10 +104,18 @@ with tab2:
             if available_terms:
                 selected_tc = st.selectbox("Select a T&C to view", available_terms)
                 if selected_tc:
-                    # Retrieve and display summary
+                    # Retrieve and format the context
                     context = retrieve_context_per_question(selected_tc, retriever)
                     st.subheader(f"Summary of {selected_tc}")
-                    st.markdown(context)
+                    if isinstance(context, list):
+                        # Join list items with double newlines for proper paragraph separation
+                        formatted_context = "\n\n".join(context)
+                    else:
+                        # Replace raw \n with proper newlines for readability
+                        formatted_context = context.replace("\\n", "\n")
+
+                    # Display formatted summary
+                    st.markdown(formatted_context)
             else:
                 st.warning("No terms and conditions available in the database.")
         except Exception as e:
