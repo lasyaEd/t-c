@@ -6,22 +6,30 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from openai import OpenAI
 from core import (
-    create_retriever,
+    initialize_rag,
     process_uploaded_tc,
     read_file_content,
     retrieve_context_per_question,
+    add_file_to_metadata,
 )
 
-# Load environment variables
-os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY", "")
-api_key = os.getenv("OPENAI_API_KEY")
+# Paths and configurations
+metadata_path = Path("data/metadata.json")
+data_dir = Path("data")
 
-# Initialize OpenAI client
-if not api_key:
-    st.sidebar.warning("Please provide your OpenAI API key in the sidebar.")
+# Sidebar for OpenAI API key
+st.sidebar.title("Configuration")
+user_api_key = st.sidebar.text_input(
+    "Enter your OpenAI API Key", type="password", help="Your key will not be stored permanently."
+)
+
+# Validate API key
+if not user_api_key:
+    st.sidebar.warning("Please enter your OpenAI API key to proceed.")
     st.stop()
 
-client = OpenAI(api_key=api_key)
+# Initialize OpenAI client with user-provided API key
+client = OpenAI(api_key=user_api_key)
 
 # Define system prompt for ToS generation
 system_prompt = """
@@ -29,6 +37,15 @@ You are a legal assistant. Based on the provided context, generate a terms of se
 Include the disclaimer:
 "This template is based on existing terms and conditions. Customize it to your needs and consult a legal expert."
 """
+
+# Initialize retriever if not already done
+if "retriever" not in st.session_state:
+    try:
+        st.session_state.retriever = initialize_rag(metadata_file=metadata_path, data_folder=data_dir)
+        st.success("RAG system initialized successfully!")
+    except Exception as e:
+        st.error(f"Failed to initialize RAG: {e}")
+        st.session_state.retriever = None
 
 # Tabs for functionalities
 tab1, tab2, tab3 = st.tabs(["Upload T&Cs", "Browse Available T&Cs", "Generate ToS Template"])
@@ -42,6 +59,11 @@ with tab1:
 
     if uploaded_file:
         try:
+            # Add uploaded file to metadata and reinitialize RAG
+            add_file_to_metadata(uploaded_file, metadata_path, data_dir)
+            st.session_state.retriever = initialize_rag(metadata_file=metadata_path, data_folder=data_dir)
+            st.success("RAG updated with new file!")
+
             # Read file content
             content = read_file_content(uploaded_file)
 
@@ -57,8 +79,8 @@ with tab1:
             unusual_clauses = [
                 "liability waiver",
                 "data sharing without consent",
-                "automatic renewals"
-            ]  # Example risk-related phrases
+                "automatic renewals",
+            ]
             risks = [chunk for chunk in chunks if any(phrase in chunk.lower() for phrase in unusual_clauses)]
             if risks:
                 for risk in risks:
@@ -75,16 +97,21 @@ with tab2:
     # Retrieve metadata from RAG
     retriever = st.session_state.get("retriever")
     if retriever:
-        available_terms = retrieve_context_per_question("what companies terms and conditions do you have access to", retriever)
-        if available_terms:
-            selected_tc = st.selectbox("Select a T&C to view", available_terms)
-            if selected_tc:
-                # Retrieve and display summary
-                context = retrieve_context_per_question(selected_tc, retriever)
-                st.subheader(f"Summary of {selected_tc}")
-                st.markdown(context)
-        else:
-            st.warning("No terms and conditions available in the database.")
+        try:
+            available_terms = retrieve_context_per_question(
+                "what companies terms and conditions do you have access to", retriever
+            )
+            if available_terms:
+                selected_tc = st.selectbox("Select a T&C to view", available_terms)
+                if selected_tc:
+                    # Retrieve and display summary
+                    context = retrieve_context_per_question(selected_tc, retriever)
+                    st.subheader(f"Summary of {selected_tc}")
+                    st.markdown(context)
+            else:
+                st.warning("No terms and conditions available in the database.")
+        except Exception as e:
+            st.error(f"Error retrieving terms: {str(e)}")
     else:
         st.warning("No retriever initialized. Upload T&Cs to build the database.")
 
@@ -117,7 +144,7 @@ with tab3:
                     # Generate ToS template
                     system_prompt_with_context = f"{system_prompt}\n\nRelevant context:\n{context}"
                     response = client.chat.completions.create(
-                        model="gpt-4",  # Update with your model
+                        model="gpt-4",
                         messages=[
                             {"role": "system", "content": system_prompt_with_context},
                             {"role": "user", "content": user_request},
