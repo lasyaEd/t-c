@@ -57,6 +57,30 @@ def read_file_content(uploaded_file) -> str:
 
     return content
 
+def clean_text_for_display(raw_text):
+    """
+    Clean and format raw text for better display with proper line breaks.
+
+    Args:
+        raw_text (str): The raw text content.
+
+    Returns:
+        str: Cleaned and formatted text.
+    """
+    # Replace raw '\n' with spaces, unless it represents a paragraph break
+    formatted_text = raw_text.replace("\\n", " ").replace("\n", " ")
+
+    # Remove multiple spaces and standardize spacing
+    formatted_text = " ".join(formatted_text.split())
+
+    # Add custom paragraph breaks (e.g., after numbered lists or sections)
+    formatted_text = formatted_text.replace("1.", "\n\n1.")
+    formatted_text = formatted_text.replace("2.", "\n\n2.")
+    formatted_text = formatted_text.replace("3.", "\n\n3.")  # Extend for all numbers
+
+    return formatted_text
+
+
 
 def generate_document_summary(content: str, client) -> str:
     """

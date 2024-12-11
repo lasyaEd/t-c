@@ -10,6 +10,7 @@ from core import (
     process_uploaded_tc,
     read_file_content,
     retrieve_context_per_question,
+    clean_text_for_display
 )
 
 # Paths and configurations
@@ -107,34 +108,15 @@ with tab2:
                     # Retrieve context for the selected T&C
                     context = retrieve_context_per_question(selected_tc, retriever)
 
-                    # Display a structured summary
-                    st.subheader(f"Summary of {selected_tc}")
+                    # Clean and format the context for display
                     if isinstance(context, list):
-                        # Combine the list into paragraphs
-                        formatted_context = "\n\n".join(context)
+                        formatted_context = clean_text_for_display("\n\n".join(context))
                     else:
-                        # Replace raw newlines for better readability
-                        formatted_context = context.replace("\\n", "\n")
+                        formatted_context = clean_text_for_display(context)
 
-                    # Add subheaders for sections if context is lengthy or detailed
-                    st.markdown("### Document Overview")
-                    st.markdown(formatted_context[:500])  # Display first 500 characters as an overview
-
-                    st.markdown("### Key Terms and Clauses")
-                    st.markdown(formatted_context[500:1000])  # Example split, adjust based on content
-
-                    st.markdown("### Important Points to Consider")
-                    unusual_clauses = [
-                        "liability waiver",
-                        "data sharing without consent",
-                        "automatic renewals",
-                    ]  # Example risk-related phrases
-                    risks = [chunk for chunk in formatted_context.split(". ") if any(phrase in chunk.lower() for phrase in unusual_clauses)]
-                    if risks:
-                        for risk in risks:
-                            st.warning(risk)
-                    else:
-                        st.info("No unusual clauses detected.")
+                    # Display structured summary
+                    st.subheader(f"Summary of {selected_tc}")
+                    st.markdown(formatted_context)
 
             else:
                 st.warning("No terms and conditions available in the database.")
@@ -142,6 +124,7 @@ with tab2:
             st.error(f"Error retrieving terms: {str(e)}")
     else:
         st.warning("No retriever initialized. Upload T&Cs to build the database.")
+
 
 # Tab 3: Generate ToS Template
 with tab3:

@@ -5,6 +5,7 @@ from .helpers import (
     read_file_content,
     retrieve_all_metadata,
     retrieve_context_per_question,
+    clean_text_for_display
 )
 from .rag import (
     create_documents_with_metadata,
@@ -27,7 +28,8 @@ __all__ = [
     # Helper functions
     "encode_pdf",
     "retrieve_context_per_question",
-    "retrieve_all_metadata"
+    "retrieve_all_metadata",
+    "clean_text_for_display"
     # Document upload functions
     "read_file_content",
     "generate_document_summary",
