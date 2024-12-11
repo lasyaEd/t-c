@@ -276,7 +276,13 @@ def retrieve_context_per_question(question, retriever):
     Returns:
         list: A list of metadata titles if the query is about terms, or context otherwise.
     """
-    if any(keyword in question.lower() for keyword in ["what terms and conditions do you have access to", "what companies terms and conditions do you have access to"]):
+    if any(
+        keyword in question.lower()
+        for keyword in [
+            "what terms and conditions do you have access to",
+            "what companies terms and conditions do you have access to",
+        ]
+    ):
         try:
             return retrieve_all_metadata(retriever.vectorstore)
         except Exception as e:

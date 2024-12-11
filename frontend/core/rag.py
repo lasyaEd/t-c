@@ -33,7 +33,9 @@ def load_metadata(metadata_path):
         return json.load(f)
 
 
-def create_documents_with_metadata(metadata_list, data_folder, chunk_size=1000, chunk_overlap=200):
+def create_documents_with_metadata(
+    metadata_list, data_folder, chunk_size=1000, chunk_overlap=200
+):
     """
     Create documents with metadata and content chunks.
     """
