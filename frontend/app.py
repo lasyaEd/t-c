@@ -14,8 +14,8 @@ from core import (
 )
 
 # Paths and configurations
-metadata_path = Path("data/metadata.json")
-data_dir = Path("data")
+metadata_path = Path("frontend/data/metadata.json")
+data_dir = Path("frontend/data")
 
 # Sidebar for OpenAI API key
 st.sidebar.title("Configuration")
